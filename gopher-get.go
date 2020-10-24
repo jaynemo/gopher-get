@@ -67,7 +67,13 @@ func main() {
 	res, err := gopher.Get(uri)
     
     if res != nil {
-		fmt.Println(res.Type)
+		if res.Type.String() != "???" {
+			fmt.Println(res.Type)
+		} else {
+			//This is POTENTIALLY a bit problematic.. but examples like sdf.org/a cause GemiNaut to hang, so....
+			
+			log.Fatal("No type returned by Gopher server.")
+		}
 	}
 	
 	if err != nil {
