@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
     "os"
+	"strings"
 
 
 	"github.com/prologic/go-gopher"
@@ -56,22 +57,39 @@ func main() {
     
     uri = flag.Arg(0)
     out = flag.Arg(1)
-
+	
+	if uri == "" {
+		log.Fatal("You must pass a Gopher URI")
+	}
+	if out == "" {
+		log.Fatal("You must pass a file to write to")
+	}
 	res, err := gopher.Get(uri)
     
-    fmt.Println(res.Type)
-    
+    if res != nil {
+		fmt.Println(res.Type)
+	}
+	
 	if err != nil {
+		if strings.Contains(err.Error(), "invalid scheme for uri") {
+			log.Fatal("Only gopher:// URIs are supported\n" + err.Error())
+		} else if strings.Contains(err.Error(), "connection failed because connected host has failed to respond.") {
+			log.Fatal("Connection timeout- the server did not respond in a reasonable period of time.\n" + err.Error())
+		}
 		log.Fatal(err)
 	}
-
+	
 	if res.Body != nil {
 		contents, err := ioutil.ReadAll(res.Body)
 		if err != nil {
             fmt.Println(err)
 			log.Fatal(err)
 		}
-        
+		
+		//Special handling for SDF, other Gophernicus installs
+        if string(contents) == "Error: File or directory not found!\r\n" {
+			log.Fatal("The server was unable to locate the file at: " + uri + ". " + string(contents))
+		}
         //save body to file
         saveFile(contents, out)
         
